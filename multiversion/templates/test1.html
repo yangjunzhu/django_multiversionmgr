@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+    <head>
+        <title>Test jQuery!</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    </head>
+    <body>
+        <h1>Test jQuery!</h1>
+        Phone: 
+        <strong class="edit" id="Entity_name_1}">
+               Click to edit.
+        </strong>
+        Right:
+        <strong class="edit_rightclick" id="entity_homepage_1">
+            Right click to change.
+        </strong>
+        Text:
+        <strong class="edit_textarea" id="entity_TextArea_1">
+            Click to edit Text.
+        </strong>
+        
+        <p>Department:
+            <strong>
+                <select name="department" id="department" class="autocomplete"
+                  onchange="update_autocomplete('Entity_department_{{ entity.id}}', document.getElementById('department').value);">
+                    <option
+                        {% if not entity.department.id %}
+                            selected="selected"
+                        {% endif %}
+                        value="department.-1">None</option>
+                    {% for department in departments %}
+                        <option 
+                            {% if department.id == entity.department.id %}
+                                selected="selected"
+                            {% endif %}
+                            value="department.{{ department.id }}">{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+            </strong>
+        </p>
+        <br />
+ 
+    <iframe class="bitbucket" id="bitbucket" name="bitbucket" src="about:blank"></iframe>
+
+    <form action="/ajax/save" method="POST" name="department_form"
+      id="department_form" target="bitbucket">
+        <input type="hidden" name="id" value="Entity_department_{{ entity.id }}" />
+        <p>Department:
+            <strong>
+                <select name="department" id="department" class="autocomplete"
+                  onchange="document.department_form.submit();">
+                    <option
+                        {% if not entity.department.id %}
+                            selected="selected"
+                        {% endif %}
+                        value="department.-1">None</option>
+                    {% for department in departments %}
+                        <option 
+                            {% if department.id == entity.department.id %}
+                                selected="selected"
+                            {% endif %}
+                            value="department.{{ department.id }}">{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+            </strong>
+        </p>
+    </form>
+
+
+
+    </body>
+    <script language="JavaScript" type="text/javascript" src="/site_media/js/jquery-1.9.1.js"></script>
+    <script language="JavaScript" type="text/javascript" src="/site_media/js/jquery.ui.i18n.all.js"></script>
+    <script language="JavaScript" type="text/javascript" src="/site_media/js/jquery.jeditable.mini.js"></script>
+    <script language="JavaScript" type="text/javascript" src="/site_media/js/ajaxfileupload.js"></script>
+    <script language="JavaScript" type="text/javascript">
+    function register_editables()
+        {
+        $(".edit").editable("/ajax/save",
+            {
+            cancel: "Cancel",
+            submit: "OK",
+            tooltip: "Click to edit.",
+            });
+        $(".edit_rightclick").editable("/ajax/save",
+            {
+            cancel: "Cancel",
+            submit: "OK",
+            tooltip: "Right click to edit.",
+            event: "contextmenu",
+            });
+        $(".edit_textarea").editable("/ajax/save",
+            {
+            cancel: "Cancel",
+            submit: "OK",
+            tooltip: "Click to edit.",
+            type: "textarea",
+            });
+        }
+
+    $(function()
+        {
+        register_editables();
+        });
+
+    function update_autocomplete(event, ui)
+        {
+        var split_value = ui.item.value.split(".");
+        var field = split_value[0];
+        var id = split_value[1];
+        $.ajax({
+            data:
+                {
+                id: "Entity_" + field + "_" + {{ entity.id }},
+                value: id,
+                },
+            url: "/ajax/save", 
+            });
+        }
+    (function($)
+    {
+        $.widget("ui.combobox", {
+            _create: function() {
+                var self = this;
+                var select = this.element.hide();
+                var input = $("<input>")
+                    .insertAfter(select)
+                    .autocomplete({
+                        source: function(request, response) {
+                            var matcher = new RegExp(request.term, "i");
+                            response(select.children("option").map(function() {
+                                var text = $(this).text();
+                                if (this.value && (!request.term || matcher.test(text)))
+                                    return {
+                                        id: this.value,
+                                        label: text.replace(new RegExp("(?![^&;]+;)(?!<[^<>]*)(" + $.ui.autocomplete.escapeRegex(request.term) + ")(?![^<>]*>)(?![^&;]+;)", "gi"), "<strong>$1</strong>"),
+                                        value: text
+                                    };
+                            }));
+                        },
+                        delay: 0,
+                        change: function(event, ui) {
+                            if (!ui.item) {
+                                // remove invalid value, as it didn't match anything
+                                $(this).val("");
+                                return false;
+                            }
+                            select.val(ui.item.id);
+                            self._trigger("selected", event, {
+                                item: select.find("[value='" + ui.item.id + "']")
+                            });
+                            
+                        },
+                        minLength: 0
+                    })
+                    .addClass("ui-widget ui-widget-content ui-corner-left");
+                $("<button>&nbsp;</button>")
+                .attr("tabIndex", -1)
+                .attr("title", "Show All Items")
+                .insertAfter(input)
+                .button({
+                    icons: {
+                        primary: "ui-icon-triangle-1-s"
+                    },
+                    text: false
+                }).removeClass("ui-corner-all")
+                .addClass("ui-corner-right ui-button-icon")
+                .click(function() {
+                    // close if already visible
+                    if (input.autocomplete("widget").is(":visible")) {
+                        input.autocomplete("close");
+                        return;
+                    }
+                    // pass empty string as value to search for, displaying all results
+                    input.autocomplete("search", "");
+                    input.focus();
+                });
+            }
+        });
+    })(jQuery);
+
+    $(function()
+        {
+        $(".autocomplete").combobox();
+        $(".autocomplete").toggle();
+        /*
+        $(".autocomplete").autocomplete({select: update_autocomplete});
+        $(".autocomplete").bind({"autocompleteselect": update_autocomplete});
+        $(".autocomplete").bind({"autocompletechange": update_autocomplete});
+        */
+        });
+          
+    </script>
+</html>

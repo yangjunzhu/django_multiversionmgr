@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <Name>django_multiversionmgr</Name>
+    <RootNamespace>django_multiversionmgr</RootNamespace>
+    <UseIISExpress>true</UseIISExpress>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>69c8e039-1d03-4144-a4b5-f62acecc0fde</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <ProjectTypeGuids>{5F0BE9CA-D677-4A4D-8806-6076C0FAAD37};{349c5851-65df-11da-9384-00065b846f21};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <StartupFile>manage.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <LaunchProvider>Django launcher</LaunchProvider>
+    <OutputPath>.</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="manage.py" />
+    <Compile Include="django_multiversionmgr\__init__.py" />
+    <Compile Include="django_multiversionmgr\settings.py" />
+    <Compile Include="django_multiversionmgr\urls.py" />
+    <Compile Include="django_multiversionmgr\wsgi.py" />
+    <Compile Include="multiversionclient\clientversionmgr.py" />
+    <Compile Include="multiversionclient\__init__.py" />
+    <Compile Include="multiversion\admin.py" />
+    <Compile Include="multiversion\createobserver.py" />
+    <Compile Include="multiversion\createversion.py" />
+    <Compile Include="multiversion\createversionform.py" />
+    <Compile Include="multiversion\management\commands\createversion.py" />
+    <Compile Include="multiversion\management\commands\downversion.py" />
+    <Compile Include="multiversion\management\commands\startclient.py" />
+    <Compile Include="multiversion\management\commands\startservice.py" />
+    <Compile Include="multiversion\management\commands\__init__.py" />
+    <Compile Include="multiversion\management\__init__.py" />
+    <Compile Include="multiversion\models.py" />
+    <Compile Include="multiversion\tests.py" />
+    <Compile Include="multiversion\urls.py" />
+    <Compile Include="multiversion\views.py" />
+    <Compile Include="multiversion\__init__.py" />
+    <Compile Include="public\createmd5code.py" />
+    <Compile Include="public\ftpmgr.py" />
+    <Compile Include="public\multicastthreaded.py" />
+    <Compile Include="public\watchdir.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebPiReference Include="https://www.microsoft.com/web/webpi/3.0/toolsproductlist.xml%3fDjango">
+      <Feed>https://www.microsoft.com/web/webpi/3.0/toolsproductlist.xml</Feed>
+      <ProductId>Django</ProductId>
+      <FriendlyName>Django 1.4</FriendlyName>
+    </WebPiReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="django_multiversionmgr\" />
+    <Folder Include="multiversion" />
+    <Folder Include="multiversion\management" />
+    <Folder Include="multiversion\management\commands" />
+    <Folder Include="multiversion\templates" />
+    <Folder Include="multiversionclient\" />
+    <Folder Include="public" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="multiversion\templates\createversion.html" />
+    <Content Include="multiversion\templates\directory_base.html" />
+    <Content Include="multiversion\templates\profile_internal.html" />
+    <Content Include="multiversion\templates\search - 副本.html" />
+    <Content Include="multiversion\templates\search.html" />
+    <Content Include="multiversion\templates\search_internal.html" />
+    <Content Include="multiversion\templates\test.html" />
+    <Content Include="multiversion\templates\test1.html" />
+  </ItemGroup>
+  <Import Project="$(VSToolsPath)\Python Tools\Microsoft.PythonTools.Django.targets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>True</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>0</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:3708/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>False</UseCustomServer>
+          <CustomServerUrl>
+          </CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}" User="">
+        <WebProjectProperties>
+          <StartPageUrl>
+          </StartPageUrl>
+          <StartAction>CurrentPage</StartAction>
+          <AspNetDebugging>True</AspNetDebugging>
+          <SilverlightDebugging>False</SilverlightDebugging>
+          <NativeDebugging>False</NativeDebugging>
+          <SQLDebugging>False</SQLDebugging>
+          <ExternalProgram>
+          </ExternalProgram>
+          <StartExternalURL>
+          </StartExternalURL>
+          <StartCmdLineArguments>
+          </StartCmdLineArguments>
+          <StartWorkingDirectory>
+          </StartWorkingDirectory>
+          <EnableENC>False</EnableENC>
+          <AlwaysStartWebServerOnDebug>False</AlwaysStartWebServerOnDebug>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

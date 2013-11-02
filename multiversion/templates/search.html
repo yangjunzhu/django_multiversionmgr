@@ -1,0 +1,569 @@
+{% extends "directory_base.html" %}
+{% block head_title %}Photo directory: Search{% endblock head_title %}
+{% block body_preamble_page %}
+<div id="body_preamble_page">
+    <strong>
+        <a href="/" onclick="PHOTO_DIRECTORY.add_new(); return false;">Add
+          new</a>
+    </strong>
+</div>
+{% endblock body_preamble_page %}
+{% block body_main %}
+<h1>Photo directory: Search</h1>
+<form name="search_form" id="search_form" action="/">
+    <input type="text" name="query" id="query" value="{{ query }}" />
+    <input type="submit" name="submit" id="submit" value="Search" />
+</form>
+<div class="outer_outer">
+    <div class="outer">
+        <div id="search_results">
+            {% if search_results %}
+                {{ search_results }}
+            {% else %}
+                <h2>Search&nbsp;results</h2>
+            {% endif %}
+        </div>
+        <div id="profile">
+            {% if profile %}
+                {{ profile }}
+            {% else %}
+                <h2>People, etc.</h2>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div id="login_form" title="Log in">
+    <form>
+        <fieldset>
+            <label for="login">Login</label>
+            <input type="text" name="login" id="login" class="text ui-widget-content ui-corner-all" /><br />
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" class="text ui-widget-content ui-corner-all" /><br />
+        </fieldset>
+    </form>
+</div>
+{% endblock body_main %}
+
+{% block footer_javascript_page %}
+<script language="JavaScript" type="text/javascript">
+<!--
+var PHOTO_DIRECTORY = new Object();
+
+jQuery(function($)
+    {
+    try
+        {
+        console.log("Starting...");
+        }
+    catch(error)
+        {
+        console = function()
+            {
+            }
+        console.log = console;
+        }
+    $(function()
+        {
+        $.ajaxSetup(
+            {
+            datatype: "json",
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+                {
+                if (XMLHttpRequest.responseText)
+                    {
+                    {% if settings.DEBUG %}
+                        PHOTO_DIRECTORY.send_notification(
+                          XMLHttpRequest.responseText);
+                    {% else %}
+                        PHOTO_DIRECTORY.send_notification(
+                          "There was an error handling your request.");
+                    {% endif %}
+                    }
+                },
+            type: "POST",
+            });
+        });
+    (function( $ ) {
+        $.widget( "ui.combobox", {
+            _create: function() {
+                var self = this;
+                var select = this.element.hide(),
+                    selected = select.children( ":selected" ),
+                    value = selected.val() ? selected.text() : "";
+                var input = $( "<input>" )
+                    .insertAfter( select )
+                    .val( value )
+                    .autocomplete({
+                        delay: 0,
+                        minLength: 0,
+                        source: function( request, response ) {
+                            var matcher = new RegExp( $.ui.autocomplete.escapeRegex(request.term), "i" );
+                            response( select.children( "option" ).map(function() {
+                                var text = $( this ).text();
+                                if ( this.value && ( !request.term || matcher.test(text) ) )
+                                    return {
+                                        label: text.replace(
+                                            new RegExp(
+                                                "(?![^&;]+;)(?!<[^<>]*)(" +
+                                                $.ui.autocomplete.escapeRegex(request.term) +
+                                                ")(?![^<>]*>)(?![^&;]+;)", "gi"
+                                            ), "<strong>$1</strong>" ),
+                                        value: text,
+                                        option: this
+                                    };
+                            }) );
+                        },
+                        select: function( event, ui ) {
+                            PHOTO_DIRECTORY.update_autocomplete_handler(event, ui);
+                            ui.item.option.selected = true;
+                            //select.val( ui.item.option.value );
+                            self._trigger( "selected", event, {
+                                item: ui.item.option
+                            });
+                        },
+                        change: function( event, ui ) {
+                            PHOTO_DIRECTORY.update_autocomplete_handler(event, ui);
+                            if ( !ui.item ) {
+                                var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( $(this).val() ) + "$", "i" ),
+                                    valid = false;
+                                select.children( "option" ).each(function() {
+                                    if ( this.value.match( matcher ) ) {
+                                        this.selected = valid = true;
+                                        return false;
+                                    }
+                                });
+                                if ( !valid ) {
+                                    // remove invalid value, as it didn't match anything
+                                    $( this ).val( "" );
+                                    select.val( "" );
+                                    return false;
+                                }
+                            }
+                        }
+                    })
+                    .addClass( "ui-widget ui-widget-content ui-corner-left" );
+
+                input.data( "autocomplete" )._renderItem = function( ul, item ) {
+                    return $( "<li></li>" )
+                        .data( "item.autocomplete", item )
+                        .append( "<a>" + item.label + "</a>" )
+                        .appendTo( ul );
+                };
+
+                $( "<button>&nbsp;</button>" )
+                    .attr( "tabIndex", -1 )
+                    .attr( "title", "Show All Items" )
+                    .insertAfter( input )
+                    .button({
+                        icons: {
+                            primary: "ui-icon-triangle-1-s"
+                        },
+                        text: false
+                    })
+                    .removeClass( "ui-corner-all" )
+                    .addClass( "ui-corner-right ui-button-icon" )
+                    .click(function() {
+                        // close if already visible
+                        if ( input.autocomplete( "widget" ).is( ":visible" ) ) {
+                            input.autocomplete( "close" );
+                            return;
+                        }
+
+                        // pass empty string as value to search for, displaying all results
+                        input.autocomplete( "search", "" );
+                        input.focus();
+                    });
+            }
+        });
+    })(jQuery);
+
+    PHOTO_DIRECTORY.current_profile = {{ id|default:"null" }} ;
+    PHOTO_DIRECTORY.database_loaded = false;
+    PHOTO_DIRECTORY.last_attempted_function = null;
+    PHOTO_DIRECTORY.logged_in = false;
+    PHOTO_DIRECTORY.DELAY_BETWEEN_RETRIES =
+      {{ settings.DELAY_BETWEEN_RETRIES }};
+    PHOTO_DIRECTORY.SHOULD_DOWNLOAD_DIRECTORY =
+      {{ settings.SHOULD_DOWNLOAD_DIRECTORY }};
+    PHOTO_DIRECTORY.SHOULD_TURN_OFF_HIJAXING =
+      {{ settings.SHOULD_TURN_OFF_HIJAXING }};
+
+    PHOTO_DIRECTORY.add_new = function()
+        {
+        $.ajax({
+            success: function(data, textStatus, XMLHttpRequest)
+                {
+                if (PHOTO_DIRECTORY.check_authentication(data))
+                    {
+                    PHOTO_DIRECTORY.load_profile(data[0].pk);
+                    }
+                else
+                    {
+                    PHOTO_DIRECTORY.ajax_file_upload = function()
+                        {
+                        //starting setting some animation when the ajax starts and completes
+                        $("#loading")
+                        .ajaxStart(function()
+                            {
+                            $(this).show();
+                            })
+                        .ajaxComplete(function()
+                            {
+                            $(this).hide();
+                            });
+                            /*
+                                prepareing ajax file upload
+                                url: the url of script file handling the uploaded files
+                                            fileElementId: the file type of input element id
+                                            and it will be the index of  $_FILES Array()
+                                dataType: it support json, xml
+                                secureuri:use secure protocol
+                                success: call back function when the ajax complete
+                                error: callback function when the ajax failed
+                                
+                                    */
+                        $.ajaxFileUpload(
+                            {
+                            url: '/ajax/saveimage/' + PHOTO_DIRECTORY.current_profile, 
+                            secureuri: false,
+                            fileElementId: 'image',
+                            dataType: 'json',
+                            success: function(data, status)
+                                {
+                                if (!PHOTO_DIRECTORY.check_authentication(data))
+                                    {
+                                    PHOTO_DIRECTORY.offer_login();
+                                    }
+                                },
+                            });
+                        return false;
+                        } 
+                    PHOTO_DIRECTORY.check_authentication = function(parsed_json)
+                        {
+                        if (parsed_json == '{"not_authenticated": true}')
+                            {
+                            PHOTO_DIRECTORY.logged_in = false;
+                            return false;
+                            }
+                        try
+                            {
+                            if (parsed_json.not_authenticated)
+                                {
+                                PHOTO_DIRECTORY.logged_in = false;
+                                return false;
+                                }
+                            else
+                                {
+                                PHOTO_DIRECTORY.logged_in = true;
+                                return true;
+                                }
+                            PHOTO_DIRECTORY.logged_in = true;
+                            return true;
+                            }
+                        catch(error)
+                            {
+                            PHOTO_DIRECTORY.logged_in = false;
+                            return false;
+                            }
+                        }
+                    PHOTO_DIRECTORY.check_login = function()
+                        {
+                        var result = $.ajax({
+                            success: function(data, textStatus, XMLHttpRequest)
+                                {
+                                if (PHOTO_DIRECTORY.check_authentication(data))
+                                    {
+                                    PHOTO_DIRECTORY.logged_in = true;
+                                    }
+                                else
+                                    {
+                                    PHOTO_DIRECTORY.logged_in = false;
+                                    }
+                                },
+                            url: "/ajax/check_login",
+                            });
+                        }
+                    PHOTO_DIRECTORY.hide_additional = function(name)
+                        {
+                        $(".show_additional_" + name).hide();
+                        $("#additional_" + name).show("slow");
+                        }
+                    PHOTO_DIRECTORY.load_current_profile = function()
+                        {
+                        if (PHOTO_DIRECTORY.current_profile)
+                           {
+                           $("#profile").load("/ajax/profile/" + PHOTO_DIRECTORY.current_profile,
+                              PHOTO_DIRECTORY.register_update);
+                            }
+                        else
+                            {
+                            $("#profile").load("");
+                            }
+                        }
+                    PHOTO_DIRECTORY.load_profile = function(id)
+                        {
+                        PHOTO_DIRECTORY.current_profile = id;
+                        if (PHOTO_DIRECTORY.current_profile)
+                            {
+                            $("#profile").load("/ajax/profile/" +
+                              PHOTO_DIRECTORY.current_profile,
+                              PHOTO_DIRECTORY.register_update);
+                            }
+                        else
+                            {
+                            $("#profile").html("");
+                            }
+                        }
+                    PHOTO_DIRECTORY.limit_width = function(css_class, limit)
+                        {
+                        $(css_class).each(function(index, element)
+                            {
+                            if ($(element).width() == 0)
+                                {
+                                setTimeout("PHOTO_DIRECTORY.limit_width('" + css_class +
+                                  "', " + limit + ");", PHOTO_DIRECTORY.DELAY_BETWEEN_RETRIES);
+                                }
+                            if ($(element).width() > limit)
+                                {
+                                var height = Math.ceil($(element).height() * limit /
+                                  $(element).width());
+                                $(element).width(limit);
+                                $(element).height(height);
+                                }
+                            });
+                        }
+                    PHOTO_DIRECTORY.offer_login = function()
+                        {
+                        $("#login_form").dialog("open");
+                        }
+                    PHOTO_DIRECTORY.register_autocomplete = function()
+                        {
+                        $(".autocomplete").combobox();
+                        /*
+                        $(".autocomplete").toggle();
+                        */
+                        }
+                    PHOTO_DIRECTORY.register_editables = function()
+                        {
+                        $(".delete").each(function(index, item)
+                            {
+                            var id = item.id;
+                            $(item).click(function()
+                                {
+                                $.ajax(
+                                    {
+                                    data:
+                                        {
+                                        id: id,
+                                        },
+                                    datatype: "html",
+                                    success: function(data)
+                                        {
+                                        if (PHOTO_DIRECTORY.check_authentication(data))
+                                            {
+                                            PHOTO_DIRECTORY.reload_profile();
+                                            }
+                                        else
+                                            {
+                                            PHOTO_DIRECTORY.last_function_called =
+                                              PHOTO_DIRECTORY.reload_profile;
+                                            PHOTO_DIRECTORY.offer_login();
+                                            }
+                                        },
+                                    url: "/ajax/delete",
+                                    });
+                                });
+                            });
+                        $(".edit").editable("/ajax/save",
+                            {
+                            callback: function(data)
+                                {
+                                if (PHOTO_DIRECTORY.check_authentication(data))
+                                    {
+                                    PHOTO_DIRECTORY.reload_profile();
+                                    }
+                                else
+                                    {
+                                    PHOTO_DIRECTORY.last_function_called =
+                                      PHOTO_DIRECTORY.reload_profile;
+                                    PHOTO_DIRECTORY.offer_login();
+                                    }
+                                },
+                            cancel: "Cancel",
+                            submit: "OK",
+                            });
+                        $(".edit_rightclick").editable("/ajax/save",
+                            {
+                            cancel: "Cancel",
+                            callback: function(data)
+                                {
+                                if (PHOTO_DIRECTORY.check_authentication(data))
+                                    {
+                                    PHOTO_DIRECTORY.reload_profile();
+                                    }
+                                else
+                                    {
+                                    PHOTO_DIRECTORY.last_function_called =
+                                      PHOTO_DIRECTORY.reload_profile;
+                                    PHOTO_DIRECTORY.offer_login();
+                                    }
+                                },
+                            event: "contextmenu",
+                            submit: "OK",
+                            tooltip: "Right click to edit.",
+                            });
+                        $(".edit_textarea").editable("/ajax/save",
+                            {
+                            cancel: "Cancel",
+                            callback: function(data)
+                                {
+                                if (PHOTO_DIRECTORY.check_authentication(data))
+                                    {
+                                    PHOTO_DIRECTORY.reload_profile();
+                                    }
+                                else
+                                    {
+                                    PHOTO_DIRECTORY.last_function_called =
+                                      PHOTO_DIRECTORY.reload_profile;
+                                    PHOTO_DIRECTORY.offer_login();
+                                    }
+                                },
+                            rows: 5,
+                            submit: "OK",
+                            tooltip: "Click to edit.",
+                            type: "textarea",
+                            });
+                        }
+                    PHOTO_DIRECTORY.register_update = function()
+                        {
+                        PHOTO_DIRECTORY.limit_width("img.profile", 150);
+                        PHOTO_DIRECTORY.limit_width("img.search_results", 80);
+                        PHOTO_DIRECTORY.register_editables();
+                        PHOTO_DIRECTORY.register_autocomplete();
+                        if (PHOTO_DIRECTORY.SHOULD_TURN_OFF_HIJAXING)
+                            {
+                            $("a").removeAttr("onclick");
+                            $("#add_new").click(function()
+                                {
+                                PHOTO_DIRECTORY.add_new();
+                                return false;
+                                });
+                            }
+                        }
+                    PHOTO_DIRECTORY.reload_profile = function()
+                        {
+                        PHOTO_DIRECTORY.tables_loaded = 0;
+                        PHOTO_DIRECTORY.load_current_profile();
+                        }
+                    PHOTO_DIRECTORY.search = function()
+                        {
+                        $("#search_results").load("/ajax/search?query=" +
+                          escape(document.search_form.query.value),
+                          PHOTO_DIRECTORY.register_update);
+                        }
+                    PHOTO_DIRECTORY.send_notification = function(message)
+                        {
+                        $("#notifications").html("<p>" + message + "</p>");
+                        setTimeout("$('#notifications').show('slow').delay(" + (5000 +
+                          message.length * 2) + ").hide('slow');", 0);
+                        }
+                    PHOTO_DIRECTORY.show_additional = function(name)
+                        {
+                        $(".show_additional_" + name).hide();
+                        $("#additional_" + name).show("slow");
+                        }
+                    PHOTO_DIRECTORY.update_autocomplete = function(id, html_id)
+                        {
+                        var value = $("#" + html_id).val();
+                        $.ajax({
+                            data:
+                                {
+                                id: id,
+                                value: value,
+                                },
+                            url: "/ajax/save", 
+                            });
+                        PHOTO_DIRECTORY.reload_profile();
+                        }
+
+                    PHOTO_DIRECTORY.update_autocomplete_handler = function(event, ui)
+                        {
+                        var split_value = ui.item.value.split(".");
+                        var field = split_value[0];
+                        var id = split_value[1];
+                        $.ajax({
+                            data:
+                                {
+                                id: "Entity_" + id + "_" + PHOTO_DIRECTORY.current_profile,
+                                value: field,
+                                },
+                            url: "/ajax/save", 
+                            });
+                        PHOTO_DIRECTORY.reload_profile();
+                        }
+    $(function()
+        {
+        if (!PHOTO_DIRECTORY.SHOULD_TURN_OFF_HIJAXING)
+            {
+            $("#search_form").submit(function(event)
+                {
+                PHOTO_DIRECTORY.search();
+                return false;
+                });
+            }
+        $("#query").width($(window).width() - 240);
+        $("#login_form").dialog({
+            autoOpen: false,
+            height: 300,
+            width: 350,
+            modal: true,
+            buttons:
+                {
+                'Log in': function()
+                    {
+                    $.ajax({
+                        data:
+                            {
+                            "login": document.getElementById("login").value,
+                            "password":
+                              document.getElementById("password").value,
+                            },
+                        datatype: 'text',
+                        success: function(data, textStatus, XMLHttpRequest)
+                            {
+                            if (data)
+                                {
+                                PHOTO_DIRECTORY.send_notification(
+                                  "You have successfully logged in and " +
+                                  "can now make changes.");
+                                PHOTO_DIRECTORY.load_database();
+                                
+                                $(".ui-dialog").hide();
+                                $(".ui-widget-overlay").hide();
+                                PHOTO_DIRECTORY.register_update();
+                                if (PHOTO_DIRECTORY.last_attempted_function)
+                                    {
+                                    PHOTO_DIRECTORY.last_attempted_function();
+                                    }
+                                }
+                            else
+                                {
+                                PHOTO_DIRECTORY.send_notification(
+                                  "Your login was not successful.");
+                                }
+                            },
+                        url: "/ajax/login",
+                        close: function(){},
+                        });
+                    },
+                },
+            });
+        PHOTO_DIRECTORY.check_login();
+        PHOTO_DIRECTORY.register_update();
+        });
+
+   
+    });
+// -->
+</script>
+{% endblock footer_javascript_page %}
