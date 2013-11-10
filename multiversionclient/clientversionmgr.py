@@ -1,18 +1,21 @@
-﻿import socket
+﻿#coding=utf-8
+import socket
 import os
-from datetime import datetime
+from datetime import datetime, time
 
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
-from public.createmd5code import getFileMD5Code
+from public.createmd5code import getfilemd5code
 from public.watchdir import WatchDir
 
-from multiversion.models import FileInfo, Version, Node
+from multiversion.models import *
+
 
 class ClientVersionMgr(object):
-    '''管理本地软件版本'''
+    """管理本地软件版本"""
+
     def __init__(self):
-        self.rootPath = ''
+        self.rootpath = ''
         self.node = None
         self.version = None
         self.watch = None
@@ -21,7 +24,7 @@ class ClientVersionMgr(object):
             hostname, aliases, addresses = socket.gethostbyname_ex(socket.gethostname())
             for address in addresses:
                 try:
-                    self.node = Node.objects.get(ip = address)
+                    self.node = Node.objects.get(ip=address)
                     break
                 except MultipleObjectsReturned:
                     print "have MultipleObjectsReturned."
@@ -33,64 +36,74 @@ class ClientVersionMgr(object):
         except socket.error as msg:
             print 'ERROR:', msg
 
-    def setRootPath(self, path):
-        '''设置本地软件版本根目录'''
-        self.rootPath = path
+    def setrootpath(self, path):
+        """设置本地软件版本根目录"""
+        self.rootpath = path
 
-    def setVersionID(self, id):
-        '''设置本地软件版本ID'''
+    def setversionid(self, versionid):
+        """设置本地软件版本ID"""
         try:
-            self.version = Version.objects.get(id)
+            self.version = Version.objects.get(versionid)
         except MultipleObjectsReturned:
-            print "self.version have MultipleObjectsReturned (id = %d)." %(id,)
+            print "self.version have MultipleObjectsReturned (id = %d)." % (versionid,)
         except ObjectDoesNotExist:
-            print "self.version doesn't exist (id = %d)." % (id,)
+            print "self.version doesn't exist (id = %d)." % (versionid,)
 
-    def startWatch(self):
-        '''开始监视本地部署文件'''
-        self.watch = WatchDir(self.rootPath, self)
+    def startwatch(self):
+        """开始监视本地部署文件"""
+        self.watch = WatchDir(self.rootpath, self)
         self.watch.start()
 
-    def stopWatch(self):
-        '''停止监视本地部署文件'''
+    def stopwatch(self):
+        """停止监视本地部署文件"""
         if self.watch:
             self.watch.stop()
 
-    def CreateFileStatus(self, file):
-        '''生成文件部署状态'''
-        if not file:
+    def createfilestatus(self, f):
+        """生成文件部署状态
+        @param f:
+        """
+        if not f:
             return
 
-        filename = os.path.join(self.rootPath, file.filepathname)
-        code = getFileMD5Code(filename)
-        if code == file.md5code:
-            ErrorVersionFile.objects.filter(node_id = self.node.id, file_id = file.id).delete()
+        filename = os.path.join(self.rootpath, f.filepathname)
+        code = getfilemd5code(filename)
+        if code == f.md5code:
+            ErrorVersionFile.objects.filter(node_id=self.node.id, file_id=f.id).delete()
         else:
-            obj, created = ErrorVersionFile.objects.get_or_create(node_id = self.node.id, file_id = file.id)
+            obj, created = ErrorVersionFile.objects.get_or_create(node_id=self.node.id, file_id=f.id)
             obj.time = datetime.now()
 
-    def changeFile(self, filenmae):
-        '''本地文件状态发生变化'''
-        self.changeFiles([filenmae])
+    def changefile(self, filenmae):
+        """本地文件状态发生变化
+        @param filenmae:
+        """
+        self.changefiles([filenmae])
 
-    def changeFiles(self, files):
-        '''本地多个文件状态发生变化'''
+    def changefiles(self, files):
+        """本地多个文件状态发生变化
+        @param files:
+        """
         for filename in files:
             try:
-                file = FileInfo.objects.get(filepathname = filename)
-                self.CreateFileStatus(file)
+                f = FileInfo.objects.get(filepathname=filename)
+                self.createfilestatus(f)
             except MultipleObjectsReturned:
                 print "have MultipleObjectsReturned."
             except ObjectDoesNotExist:
                 print "Either the entry or blog doesn't exist."
 
-    def changeDir(self, path):
-        '''本地文件目录状态发生变化'''
-        self.changeDirs([path])
+    def changedir(self, path):
+        """本地文件目录状态发生变化
+        @param path:
+        """
+        self.changedirs([path])
 
-    def changeDirs(self, dirs):
-        '''本地多个文件目录状态发生变化'''
-        for dir in dirs:
+    def changedirs(self, dirs):
+        """本地多个文件目录状态发生变化
+        @param dirs:
+        """
+        for d in dirs:
             try:
                 #file = FileInfo.objects.get(filepathname = pathname)
                 #self.CreateFileStatus(file)
@@ -102,14 +115,13 @@ class ClientVersionMgr(object):
 
 
 if __name__ == "__main__":
-    mgr = ClientVersionMgr('./')
-    mgr.setRootPath(r'E:\testftp\test\1.00')
-    mgr.setVersionID(1)
-    mgr.start()
+    mgr = ClientVersionMgr()
+    mgr.setrootpath('./')
+    mgr.setrootpath(r'E:\testftp\test\1.00')
+    mgr.setversionid(1)
+    mgr.startwatch()
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        mgr.stop()
-
-
+        mgr.stopwatch()

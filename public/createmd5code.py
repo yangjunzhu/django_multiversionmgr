@@ -1,12 +1,10 @@
 import hashlib
 
-def getFileMD5Code(fullname):
+
+def getfilemd5code(fullname):
     message = ''
-    try:
-        with open(fullname, 'r') as f:
-            message = f.read()
-    except Exception:
-        return ''
+    with open(fullname, 'r') as f:
+        message = f.read()
     m = hashlib.md5()
     m.update(message)
     return m.hexdigest()

@@ -1,5 +1,6 @@
 from django import forms
 
+
 class CreateVersionForm(forms.Form):
     software = forms.CharField()
     version = forms.CharField()
@@ -10,4 +11,3 @@ class CreateVersionForm(forms.Form):
         if 1:
             raise forms.ValidationError("Not enough words!")
         return software
-

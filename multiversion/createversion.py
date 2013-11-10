@@ -1,5 +1,4 @@
 import os
-import hashlib
 
 from models import FileInfo
 
@@ -10,7 +9,7 @@ class CreateVersion:
         self.directory = directory
         self.files = []
 
-    def setObserver(self, observer):
+    def setobserver(self, observer):
         self.observer = observer
 
     def create(self):
@@ -19,18 +18,16 @@ class CreateVersion:
         while stack:
             directory = stack.pop()
             relpath = os.path.relpath(directory, self.directory)
-            for file in os.listdir(directory):
-                if file == 'deploy.xml':
+            for filename in os.listdir(directory):
+                if filename == 'deploy.xml':
                     continue
-                fullname = directory + '/' + file
+                fullname = directory + '/' + filename
                 if os.path.isdir(fullname):
                     stack.append(fullname)
                 else:
                     f = FileInfo()
                     f.filepath = relpath
-                    f.filename = file
+                    f.filename = filename
                     self.files.append(f)
         if self.observer:
-            self.observer.createmd5Code(self.directory, self.files)
-
-
+            self.observer.createmd5code(self.directory, self.files)

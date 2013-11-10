@@ -32,6 +32,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
+
 class Command(BaseCommand):
     args = "task_id"
     
@@ -70,4 +71,3 @@ class Command(BaseCommand):
         LOG.setLevel(logging.INFO)
 
         return Task.objects.exec_task(*args)
-        
